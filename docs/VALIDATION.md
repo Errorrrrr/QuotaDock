@@ -156,3 +156,12 @@
 - 发布范围：Antigravity 桌面只读来源及套餐/AI Credits 解析、重复工具拦截、添加工具说明布局、多额度总览列表。没有新增账号登录状态保存或账号切换能力，同一来源仍跟随当前登录。
 - VERSION、静态更新清单与调试版本同步为 0.1.2。`bash scripts/test.sh`：105 项中 102 通过、3 项真实账号测试默认跳过、0 失败；`python3 scripts/test-antigravity-bridge.py` 通过。
 - 桌面来源及 UI 的实际验证见上方记录；本轮打包前未重做未涉及的其他服务真实登录验收。安装包仍为 macOS 14+ arm64、ad-hoc 签名。公开下载与更新清单验证在发布后单独记录。
+
+
+## v0.1.2 公开发布验证（2026-10-15）
+
+- 源码提交 `76871dc`、标签 `v0.1.2` 已推送；Release：https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.2，正式公开且非预发布。先发布完整资源，再推送 main 上的版本清单。
+- 附件 `QuotaDock-0.1.2-macOS-arm64.zip`（3,883,660 字节）与 `SHA256SUMS` 均已匿名下载验证。ZIP SHA256：`f6afc487cd2680a7749014bb229b78146e7fbe40bcd4d12dacad55af624f8d2e`。
+- Release 构建、arm64 架构、Info.plist 0.1.2、ad-hoc 严格签名均核对通过。102 项 Swift 测试和桥接脚本测试通过，3 项真实账号测试默认跳过。
+- 原生更新 UI 实测：运行中的 0.1.1 显示发现 0.1.2 和下载入口；重启本机 0.1.2 后显示“当前已是最新版本”。套餐、余额与总览数据正常，原有工具和账号保留。
+- 本版不包括独立账号登录凭据保存或自动切换。尚未启用云端 CI（现有 GitHub 授权缺少 workflow scope）；未扩大权限，未建立持续监控。

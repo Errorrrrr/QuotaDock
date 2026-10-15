@@ -44,7 +44,7 @@ public struct AntigravityCLIQuotaProvider: Sendable {
                 result.accountName = identity.name
                 result.accountEmail = identity.email
                 result.planName = identity.plan
-                if identity.plan == nil { result.notice = [result.notice, "套餐资料暂不可用"].compactMap { $0 }.joined(separator: " · ") }
+                if identity.plan == nil { result.notice = [result.notice, "未返回可识别的订阅套餐"].compactMap { $0 }.joined(separator: " · ") }
             } catch is CancellationError { throw CancellationError() }
             catch AntigravityIdentityError.changed { throw AntigravityIdentityError.changed }
             catch { result.notice = [result.notice, "账号资料暂不可用，显示别名"].compactMap { $0 }.joined(separator: " · ") }

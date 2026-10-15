@@ -35,6 +35,12 @@ final class AntigravityProfileTests: XCTestCase {
         XCTAssertEqual(profile.plan, "Google AI Pro")
         XCTAssertNil(try AntigravityAccountProfileProvider.plan(Data(#"{"currentTier":{"name":"Free"},"paidTier":{}}"#.utf8)))
     }
+    func testCodeAssistServiceTierIsNotAnAntigravitySubscription() throws {
+        for json in [#"{"currentTier":{"id":"free-tier","name":"Gemini Code Assist for individuals"}}"#, #"{"currentTier":{"id":"standard-tier","name":"Standard"}}"#, #"{"currentTier":{"name":"Free"}}"#] {
+            XCTAssertNil(try AntigravityAccountProfileProvider.plan(Data(json.utf8)))
+        }
+        XCTAssertEqual(try AntigravityAccountProfileProvider.plan(Data(#"{"paidTier":{"name":"Gemini Code Assist in Google One AI Pro"}}"#.utf8)), "Google AI Pro")
+    }
     func testWrongSubjectRejectedAndPlanFailureKeepsIdentity() async throws {
         let mismatch = AntigravityAccountProfileProvider(load: { _ in Data(#"{"id":"other","name":"Wrong"}"#.utf8) }, read: { Self.record() })
         do { _ = try await mismatch.fetch(mismatch.credential()); XCTFail("Must reject another account") } catch {}

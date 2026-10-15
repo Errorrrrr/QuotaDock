@@ -122,3 +122,5 @@ JSON 映射可使用 `balance_infos.0.total_balance` 作为余额，币种必须
 使用同一 bearer 请求 Google `oauth2/v2/userinfo`，返回 ID 须匹配登录记录 subject；昵称及邮箱来自认证响应，不使用未验证 JWT 直接生成显示资料。再只读调用 `daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist`（HEALTH_CHECK），优先 paidTier.name，避免将 API Free 层误当订阅套餐。查询前后检查登录主体，发现变化时丢弃混合结果；资料失败保留额度，套餐失败保留已确认身份。
 
 依据：[官方 go-keyring macOS 编码](https://github.com/zalando/go-keyring/blob/master/keyring_darwin.go)、[Google Code Assist 协议实现](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/server.ts) 及本机官方 agy 实现。该内部套餐协议可能随服务更新；备用 statusLine 快照仍保留。
+
+套餐修正（0.1.1）：真实响应中 currentTier=free-tier、name=Gemini Code Assist for individuals 是 Code Assist 服务层；日常和生产接口结果相同，不能据此断言 Antigravity Free/Pro/Ultra。仅规范化明确的 Google AI/Google One Pro、Ultra 订阅名称，其他结果不作为套餐，显示未识别提示。旧版“套餐返回通过”仅证明字段存在，不能证明其订阅含义正确，本条修正该验收结论。

@@ -140,11 +140,11 @@ final class ActiveQuotaProviderTests: XCTestCase {
         let result = try await AntigravityCLIQuotaProvider().fetch(account: .init(toolID: UUID(), name: "Live check"))
         XCTAssertFalse(result.metrics.isEmpty)
         XCTAssertTrue(result.metrics.contains { $0.id == "agy-credits" })
-        XCTAssertNil(result.notice)
         XCTAssertFalse(result.accountName?.isEmpty ?? true)
         XCTAssertFalse(result.accountEmail?.isEmpty ?? true)
-        XCTAssertFalse(result.planName?.isEmpty ?? true)
-        print("Antigravity live check: quota, credits, nickname, email and plan returned; no private values logged.")
+        if let plan = result.planName { XCTAssertTrue(["Google AI Pro", "Google AI Ultra"].contains(plan)) }
+        else { XCTAssertTrue(result.notice?.contains("订阅套餐") == true) }
+        print("Antigravity live check: quota, credits, nickname and email returned; subscription is explicit or marked unavailable; no private values logged.")
     }
 
     func testLiveClaudeOAuthReadOnly() async throws {

@@ -4,7 +4,7 @@ import QuotaDockCore
 @MainActor
 final class UpdateController: NSObject, NSWindowDelegate {
     static let shared = UpdateController()
-    static var currentVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0" }
+    static var currentVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.1" }
     private var window: NSWindow?
     private var task: Task<Void, Never>?
     private let status = NSTextField(labelWithString: "")

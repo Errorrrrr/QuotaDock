@@ -108,3 +108,5 @@
 - 使用公开静态版本清单，无 GitHub Token，无账号资料上传；严格限制版本格式、清单大小和本仓库对应版本的 Release/ZIP URL，按系统和架构控制下载按钮。仅打开浏览器下载，不自动安装。
 - 90 项 Swift 测试：88 通过、2 默认跳过，0 失败；桥接测试通过。新增版本数值比较、同版/旧版、异常失败、取消、URL 白名单及 VERSION/清单一致性检查。
 - Release 编译、ad-hoc 签名和严格验证通过；首个安装包为 macOS 14+ arm64。
+
+- 0.1.1 追加修正：真实 Code Assist 响应只有 free-tier 服务层，不是已确认的 Antigravity 订阅套餐；删除通用层名称回退，未知时不标 Free/Pro/Ultra。增加回归测试。此前套餐字段非空的验证不足以证明含义正确。GitHub CI 模板保存在 docs/github-actions-ci.yml；现有授权缺少 workflow scope，未启用云端 CI。

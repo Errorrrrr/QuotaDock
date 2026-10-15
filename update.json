@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
-  "notes": "首次发布：多工具账号额度、菜单栏额度选择、后台刷新与手动检查更新。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.0",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.0/QuotaDock-0.1.0-macOS-arm64.zip",
+  "version": "0.1.1",
+  "notes": "新增手动检查更新；修正 Antigravity 套餐误标，不再把 Code Assist 服务层级当订阅套餐。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.1",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.1/QuotaDock-0.1.1-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

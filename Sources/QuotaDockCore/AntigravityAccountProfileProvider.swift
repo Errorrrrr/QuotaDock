@@ -101,6 +101,13 @@ struct AntigravityAccountProfileProvider: Sendable {
         // An API free tier can coexist with a paid Google AI subscription.
         // Prefer the paid tier; never infer Free when a paid tier is incomplete.
         let tier = root["paidTier"] as? [String: Any] ?? root["currentTier"] as? [String: Any]
-        return CLIQuotaSupport.text(tier?["name"])
+        guard let name = CLIQuotaSupport.text(tier?["name"])?.lowercased() else { return nil }
+        // Code Assist service tiers (including free-tier/standard-tier) do not
+        // establish an Antigravity subscription. Only explicit subscription names qualify.
+        switch name {
+        case "google ai pro", "google one ai pro", "gemini code assist in google one ai pro": return "Google AI Pro"
+        case "google ai ultra", "google one ai ultra", "gemini code assist in google one ai ultra": return "Google AI Ultra"
+        default: return nil
+        }
     }
 }

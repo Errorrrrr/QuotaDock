@@ -110,3 +110,10 @@
 - Release 编译、ad-hoc 签名和严格验证通过；首个安装包为 macOS 14+ arm64。
 
 - 0.1.1 追加修正：真实 Code Assist 响应只有 free-tier 服务层，不是已确认的 Antigravity 订阅套餐；删除通用层名称回退，未知时不标 Free/Pro/Ultra。增加回归测试。此前套餐字段非空的验证不足以证明含义正确。GitHub CI 模板保存在 docs/github-actions-ci.yml；现有授权缺少 workflow scope，未启用云端 CI。
+
+## v0.1.1 发布验收（2026-10-15）
+
+- 91 项 Swift 测试：89 通过、2 默认跳过；Release 编译与严格签名通过。公开仓库 Errorrrrr/QuotaDock，源码与 v0.1.1 标签已推送；正式 Release 包含 arm64 ZIP 与 SHA256SUMS。
+- 匿名下载公开安装包成功，SHA256 与本地及 GitHub 附件 digest 一致。公开 update.json 可无认证获取。
+- 真实更新 UI：v0.1.0 检测到 v0.1.1 并显示说明和下载按钮；重启 v0.1.1 后显示“当前已是最新版本”。未自动替换安装，也未假设完成浏览器下载按钮点击。
+- 新版真实 Antigravity UI 保留昵称和全部额度，显示“未返回可识别的订阅套餐”，不再错误标记为 Gemini Code Assist for individuals。真实订阅套餐仍未确认。

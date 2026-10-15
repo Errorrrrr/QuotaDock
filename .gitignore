@@ -1,0 +1,16 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+.codegraph/
+*.xcuserstate
+
+# Local editor state and Python caches
+.cursor/
+__pycache__/
+*.py[cod]
+
+# Local credentials and overrides
+.env
+.env.*
+!.env.example

@@ -1,0 +1,105 @@
+name: macOS CI and Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate version and runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          version="$(cat VERSION)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "$GITHUB_REF_NAME" = "v$version"
+            test -f "docs/releases/v$version.md"
+          fi
+      - name: Swift tests
+        run: bash scripts/test.sh
+      - name: CLI bridge tests
+        run: python3 scripts/test-antigravity-bridge.py
+      - name: Build and verify app
+        run: |
+          bash scripts/build-app.sh
+          test "$(lipo -archs dist/QuotaDock.app/Contents/MacOS/QuotaDock)" = arm64
+          codesign --verify --strict dist/QuotaDock.app
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent QuotaDock.app "QuotaDock-$version-macOS-arm64.zip"
+          shasum -a 256 "QuotaDock-$version-macOS-arm64.zip" > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macOS-arm64
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: macOS-arm64
+          path: dist
+      - name: Publish verified assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum --check SHA256SUMS)
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > /tmp/release-draft; then
+            test "$(cat /tmp/release-draft)" = true || { echo "Already published; do not replace release assets."; exit 1; }
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --verify-tag --draft --title "QuotaDock $GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md"
+          fi
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Publish update manifest after release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "v$(cat VERSION)" = "$RELEASE_TAG" || { echo "main has moved to another version; refusing stale manifest."; exit 1; }
+          python3 scripts/update-release-manifest.py
+          if ! git diff --quiet -- update.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add update.json
+            git commit -m "chore: publish update manifest for $RELEASE_TAG"
+            git push origin HEAD:main
+          fi

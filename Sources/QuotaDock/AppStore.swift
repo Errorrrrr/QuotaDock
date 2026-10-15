@@ -134,7 +134,7 @@ final class AppStore: ObservableObject {
                 case .httpJSON:
                     credential = try self.keychain.token(for: accountID)
                     result = try await HTTPQuotaProvider().fetch(tool: tool, account: account, token: credential)
-                case .codexCLI, .claudeOAuth, .antigravityCLI, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI:
+                case .codexCLI, .claudeOAuth, .antigravityCLI, .antigravityDesktop, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI:
                     result = try await LocalAccountConnection.fetch(provider: tool.provider, account: account)
                 case .claudeSnapshot:
                     result = try await ClaudeSnapshotProvider().fetch(account: account)
@@ -166,6 +166,9 @@ final class AppStore: ObservableObject {
     }
 
     func saveTool(_ tool: ToolDefinition) throws {
+        if let existing = config.toolPreventingSave(tool) {
+            throw StoreError.invalidConfiguration("已添加工具“\(existing.name)”，无需重复添加。请在该工具下添加账号。")
+        }
         guard tool.availableProviders.contains(tool.provider) else {
             throw StoreError.invalidConfiguration("此工具不支持所选接入方式，请重新配置工具。")
         }
@@ -547,7 +550,7 @@ final class AppStore: ObservableObject {
                 switch tool.provider {
                 case .httpJSON: primaryIDs.formUnion(tool.http.mappings.map { $0.id.uuidString })
                 case .claudeSnapshot, .claudeOAuth: primaryIDs.formUnion(["five_hour", "seven_day", "seven_day_sonnet", "seven_day_opus", "extra_usage"])
-                case .manual, .codexCLI, .antigravityCLI, .antigravitySnapshot, .kimiCLI, .glmCLI, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI: break
+                case .manual, .codexCLI, .antigravityCLI, .antigravityDesktop, .antigravitySnapshot, .kimiCLI, .glmCLI, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI: break
                 }
             }
             guard supplementalIDs.count == account.supplementalMetrics.count,
@@ -565,6 +568,12 @@ final class AppStore: ObservableObject {
         }
         guard activeAntigravity.count <= 1, activeAntigravity.allSatisfy({ $0.externalID.isEmpty }) else {
             throw StoreError.invalidConfiguration("Antigravity 自动查询跟随当前 CLI 登录，仅可添加一个账号；独立多账号请使用各自的快照接入。")
+        }
+        let desktopAccounts = configuration.accounts.filter { account in
+            configuration.tools.first(where: { $0.id == account.toolID })?.provider == .antigravityDesktop
+        }
+        guard desktopAccounts.count <= 1, desktopAccounts.allSatisfy({ $0.externalID.isEmpty }) else {
+            throw StoreError.invalidConfiguration("Antigravity 桌面查询跟随当前桌面登录，仅可添加一个账号。")
         }
         var claudeHomes = Set<String>()
         for account in configuration.accounts where configuration.tools.first(where: { $0.id == account.toolID })?.provider == .claudeOAuth {

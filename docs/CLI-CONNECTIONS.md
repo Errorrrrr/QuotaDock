@@ -1,12 +1,22 @@
-# CLI 接入说明
+# CLI 与桌面接入说明
 
 账号别名用于 CLI 未提供昵称时的展示。邮箱和套餐只在控制台补充显示。每条账号必须对应独立登录来源；填写不同别名不会创建新的上游账号。
 
 支持默认登录的 CLI 来源在“添加账号”中直接点击“读取并添加”即可；无需重复填写名称、凭据或默认目录。其他账号目录与备用文件位于“高级设置”。读取失败或取消时不保存空账号，同一默认 Codex/Claude 来源不能重复添加。
 
-## Antigravity
+## Antigravity 桌面应用（推荐）
 
-默认选择“Antigravity CLI · 后台自动刷新”。安装并登录官方 `agy` 后添加一个账号即可，应用按刷新周期依次调用：
+打开并登录官方 Antigravity 桌面应用，选择“Antigravity 桌面 · 后台自动刷新”，然后点击“读取并添加”，无需填写凭据。已有 CLI 工具可在工具编辑器切换到桌面接入；两处登录可能不同，请确认所选来源。
+
+QuotaDock 识别 `/Applications/Antigravity.app` 或 `~/Applications/Antigravity.app` 中正在运行的官方 `language_server`，仅向该进程持有的 `127.0.0.1` 监听端口发送 `GetUserStatus` 和 `RetrieveUserQuotaSummary` 只读查询。使用进程中的 CSRF 会话令牌认证本机请求，令牌只在内存使用，不保存、不输出；不读取钥匙串，不向外部主机发送此令牌，不启动模型对话，不修改登录。需要保持桌面应用运行，无法连接时明确报错，不自动混用 CLI 账号。
+
+套餐取自桌面 `userStatus.userTier.name`，例如 Google AI Pro，而不是 Code Assist 服务层名称。AI Credits 读取 `GOOGLE_ONE_AI` 积分记录：协议中的 `creditAmount` 是普通 proto3 整数，在记录存在但数值省略时表示 0；记录不存在则显示未返回，不能当成 0。额度窗口缺少 `remainingFraction` 时属于未知值，不能当成耗尽。查询前后核对账号，发现切换则丢弃整次结果。
+
+这是桌面内部协议，后续版本可能变更。2026-10-15 已对本机桌面应用完成只读验证，返回 Google AI Pro、模型 5 小时/每周窗口及 AI Credits。原 CLI `/credits` 偶发失败的具体原因尚未确认，桌面接入不依赖该命令。
+
+## Antigravity CLI
+
+如需使用 CLI 登录，选择“Antigravity CLI · 后台自动刷新”。安装并登录官方 `agy` 后添加一个账号即可，应用按刷新周期依次调用：
 
 ```bash
 agy -p "/usage" --output-format json --print-timeout 20s

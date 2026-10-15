@@ -292,7 +292,9 @@ final class AccountEditorController: NSViewController {
         quickNote.isHidden = !quick
         advancedContent.isHidden = quick && !advancedExpanded
         advancedButton.title = advancedExpanded ? "收起高级设置" : "高级设置 · 其他账号 / 备用快照"
-        quickNote.stringValue = selectedTool?.provider == .antigravityCLI
+        quickNote.stringValue = selectedTool?.provider == .antigravityDesktop
+            ? "请先打开并登录 Antigravity 桌面应用，点击即可读取账号、套餐和额度。"
+            : selectedTool?.provider == .antigravityCLI
             ? "直接读取 Antigravity 当前登录账号，无需填写名称或凭据。"
             : "直接读取此工具已登录的账号，无需填写名称或凭据。其他账号可在高级设置中选择登录目录。"
         nameField.placeholderString = selectedTool?.provider.supportsDefaultLogin == true ? "留空使用识别到的账号名" : "可选：个人账号 / 工作账号"
@@ -331,7 +333,7 @@ final class AccountEditorController: NSViewController {
         }
         credentials.isHidden = ![.httpJSON, .kimiCLI].contains(tool.provider)
         manualContent.isHidden = tool.provider != .manual
-        externalRow?.isHidden = [.manual, .antigravityCLI].contains(tool.provider)
+        externalRow?.isHidden = [.manual, .antigravityCLI, .antigravityDesktop].contains(tool.provider)
         fallbackRow?.isHidden = ![.claudeOAuth, .antigravityCLI].contains(tool.provider)
         switch tool.provider {
         case .codexCLI:
@@ -342,6 +344,8 @@ final class AccountEditorController: NSViewController {
             externalLabel.stringValue = "CLAUDE_CONFIG_DIR"
             externalField.placeholderString = "留空读取 CLI 默认登录（通常 ~/.claude）"
             providerNote.stringValue = "复用此目录的 Claude OAuth 登录，自动查询额度；多账号需分别登录。可选同账号快照备用，需先配置桥接脚本。过期登录由官方 CLI 更新；后台不弹出钥匙串授权窗口。"
+        case .antigravityDesktop:
+            providerNote.stringValue = "跟随官方桌面应用当前登录，仅支持一个账号。只读查询昵称、套餐和额度，不读取钥匙串；本机会话令牌仅在内存使用，不保存、不输出。需保持桌面应用运行，不自动改用 CLI 登录。"
         case .antigravityCLI:
             providerNote.stringValue = "使用 agy 当前登录账号，定时只读查询额度及 AI Credits；不启动模型对话。跟随 CLI 登录切换，仅支持一个自动查询账号。独立多账号请使用快照接入，备用快照也必须对应当前账号。"
         case .claudeSnapshot:
@@ -467,7 +471,7 @@ final class AccountEditorController: NSViewController {
             updated.subtitle = subtitleField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             updated.isEnabled = enabledButton.state == .on
             updated.menuBarMetricID = menuBarMetricPicker.selectedItem?.representedObject as? String
-            updated.externalID = tool.provider == .antigravityCLI ? "" : externalField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            updated.externalID = [.antigravityCLI, .antigravityDesktop].contains(tool.provider) ? "" : externalField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             updated.fallbackSnapshotPath = [.claudeOAuth, .antigravityCLI].contains(tool.provider) ? fallbackField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) : nil
             if tool.provider == .manual { updated.manualMetrics = try manualRows.map { try $0.value() } }
             updated.supplementalMetrics = try supplementalRows.map { try $0.value() }
@@ -721,6 +725,7 @@ private enum EditorForm {
         label.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         label.textColor = .secondaryLabelColor
         label.maximumNumberOfLines = 0
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }
@@ -739,12 +744,26 @@ private enum EditorForm {
     }
 
     static func group(_ title: String, _ content: NSView) -> NSView {
-        let box = NSBox()
-        box.title = title
-        box.boxType = .primary
-        box.contentViewMargins = NSSize(width: 12, height: 12)
-        if let container = box.contentView { pin(content, inside: container) }
-        return box
+        // NSBox manages its contentView frame itself, so pinning a wrapping
+        // label inside it does not give the outer stack a reliable height.
+        // Keep the heading and body in the same Auto Layout sizing chain.
+        let heading = NSTextField(labelWithString: title)
+        heading.font = .systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
+        heading.setContentCompressionResistancePriority(.required, for: .vertical)
+        let body = column()
+        body.spacing = 8
+        add(heading, to: body)
+        add(content, to: body)
+        let group = NSView()
+        body.translatesAutoresizingMaskIntoConstraints = false
+        group.addSubview(body)
+        NSLayoutConstraint.activate([
+            body.leadingAnchor.constraint(equalTo: group.leadingAnchor, constant: 12),
+            body.trailingAnchor.constraint(equalTo: group.trailingAnchor, constant: -12),
+            body.topAnchor.constraint(equalTo: group.topAnchor, constant: 12),
+            body.bottomAnchor.constraint(equalTo: group.bottomAnchor, constant: -12)
+        ])
+        return group
     }
 
     static func pin(_ child: NSView, inside parent: NSView) {

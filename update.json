@@ -1,8 +1,8 @@
 {
-  "version": "0.1.1",
-  "notes": "新增手动检查更新；修正 Antigravity 套餐误标，不再把 Code Assist 服务层级当订阅套餐。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.1",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.1/QuotaDock-0.1.1-macOS-arm64.zip",
+  "version": "0.1.2",
+  "notes": "新增 Antigravity 桌面套餐与 AI Credits 查询；阻止重复添加工具；修复添加表单重叠，优化多额度总览。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.2",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.2/QuotaDock-0.1.2-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

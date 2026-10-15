@@ -105,7 +105,7 @@ final class CLIQuotaProviderTests: XCTestCase {
     }
 
     func testProviderMenusStayScopedToTheirBrands() {
-        XCTAssertEqual(ToolDefinition(name: "Antigravity").availableProviders.first, .antigravityCLI)
+        XCTAssertEqual(ToolDefinition(name: "Antigravity").availableProviders.first, .antigravityDesktop)
         XCTAssertEqual(ToolDefinition(name: "Kimi").availableProviders.first, .kimiCLI)
         XCTAssertEqual(ToolDefinition(name: "智谱 GLM").availableProviders.first, .glmCLI)
         XCTAssertFalse(ToolDefinition(name: "Claude").availableProviders.contains(.glmCLI))

@@ -22,7 +22,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable {
     case manual
     case httpJSON
     case codexCLI
-    case claudeOAuth, antigravityCLI
+    case claudeOAuth, antigravityCLI, antigravityDesktop
     case claudeSnapshot
     case antigravitySnapshot
     case kimiCLI
@@ -35,6 +35,7 @@ public enum ProviderKind: String, Codable, CaseIterable, Sendable {
         case .httpJSON: return "JSON 接口"
         case .codexCLI: return "Codex CLI"
         case .claudeOAuth: return "Claude Code · 后台自动刷新"
+        case .antigravityDesktop: return "Antigravity 桌面 · 后台自动刷新"
         case .antigravityCLI: return "Antigravity CLI · 后台自动刷新"
         case .claudeSnapshot: return "Claude 本地快照 · 备用"
         case .antigravitySnapshot: return "Antigravity CLI 快照 · 备用"

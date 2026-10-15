@@ -38,7 +38,7 @@ open dist/QuotaDock.app --args --demo --preview
 | Claude Code | CLI OAuth 后台查询订阅额度、额外用量预算；快照备用 | 独立 CLAUDE_CONFIG_DIR 登录或快照 |
 | DeepSeek | 官方 API / Harness 配置读取 API 余额 | 每个账号独立 API Key 或 DSH_HOME |
 | OpenRouter | 官方 credits 接口 / Ori 明文登录的密钥额度 | 独立 Management Key 或 CLI 登录文件 |
-| Antigravity | 官方 agy 只读后台查询额度、AI Credits、昵称及套餐；快照备用 | 自动查询跟随当前 CLI 登录；独立多账号用快照 |
+| Antigravity | 桌面应用只读查询套餐、AI Credits、昵称及额度；CLI / 快照可选 | 桌面与 CLI 登录独立，分别跟随当前账号；独立多账号用快照 |
 | Kimi Code | 官方 CLI 本地服务，套餐窗口、加购余额、昵称/邮箱/套餐 | 每账号独立登录服务及 Token |
 | 智谱 GLM | 读取 GLM 的 Claude Code 配置，查询官方插件同源 Coding Plan 接口 | 每账号独立 settings.json |
 | Cursor | CLI 登录文件 + 内置 DashboardService 可展示额度 | 独立 auth.json |
@@ -91,7 +91,7 @@ CLI 在进程 PATH、`~/.local/bin`、`/opt/homebrew/bin`、`/usr/local/bin` 等
 
 ### 各工具 CLI
 
-新增 Cursor、Copilot、Qwen、Ori、DeepSeek Harness 的读取方式与登录限制，完整步骤见 [CLI 接入说明](docs/CLI-CONNECTIONS.md)，账号编辑器中也可直接打开随应用附带的说明和桥接脚本。Antigravity 默认使用只读 `/usage` 与 `/credits` 后台查询，失败可回退快照；Kimi 需要本地服务运行，GLM 读取明确指定的 CLI 配置。Gemini 已从预设与演示中移除，不会把它的旧数据改标成 Antigravity。
+新增 Cursor、Copilot、Qwen、Ori、DeepSeek Harness 的读取方式与登录限制，完整步骤见 [CLI 接入说明](docs/CLI-CONNECTIONS.md)，账号编辑器中也可直接打开随应用附带的说明和桥接脚本。Antigravity 默认读取运行中的官方桌面应用，套餐、AI Credits 与额度来自同一桌面账号，不读取钥匙串；CLI 的 `/usage`、`/credits` 与快照仍可单独选择；Kimi 需要本地服务运行，GLM 读取明确指定的 CLI 配置。Gemini 已从预设与演示中移除，不会把它的旧数据改标成 Antigravity。
 
 ### 自定义 HTTP
 

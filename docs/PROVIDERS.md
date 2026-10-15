@@ -124,3 +124,11 @@ JSON 映射可使用 `balance_infos.0.total_balance` 作为余额，币种必须
 依据：[官方 go-keyring macOS 编码](https://github.com/zalando/go-keyring/blob/master/keyring_darwin.go)、[Google Code Assist 协议实现](https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/code_assist/server.ts) 及本机官方 agy 实现。该内部套餐协议可能随服务更新；备用 statusLine 快照仍保留。
 
 套餐修正（0.1.1）：真实响应中 currentTier=free-tier、name=Gemini Code Assist for individuals 是 Code Assist 服务层；日常和生产接口结果相同，不能据此断言 Antigravity Free/Pro/Ultra。仅规范化明确的 Google AI/Google One Pro、Ultra 订阅名称，其他结果不作为套餐，显示未识别提示。旧版“套餐返回通过”仅证明字段存在，不能证明其订阅含义正确，本条修正该验收结论。
+
+### Antigravity 桌面接入补充（2026-10-15）
+
+当前推荐桌面来源：在已运行的官方 `Antigravity.app/Contents/Resources/bin/language_server` 上，只读请求本机 `GetUserStatus` 和 `RetrieveUserQuotaSummary`。套餐读取 `userStatus.userTier.name`，实际桌面界面和接口均返回 Google AI Pro；不再以 Code Assist 的 free-tier 服务层推导桌面套餐。
+
+AI Credits 来自 `userTier.availableCredits` 中的 `GOOGLE_ONE_AI` 记录。已核对随官方应用分发的 protobuf 描述：`Credits.credit_amount` 为普通 proto3 int64，记录存在、数值省略时为 0；额度桶 `remainingFraction` 则属于 oneof，缺失不等于 0。新读取器遵循不同的缺失语义。
+
+桌面会话令牌仅内存使用，不输出或保存，不读取钥匙串；固定回环地址且每次请求重新检查进程路径、监听端口归属，禁止重定向。桌面与 CLI 是不同可选来源，查询前后核对账号、不跨来源拼接资料，不自动切换账号。桌面退出时提示启动；内部协议后续变动可能需要适配。

@@ -289,15 +289,7 @@ final class ManagementController: NSViewController {
             if metrics.isEmpty {
                 row.addArrangedSubview(label(account.isEnabled ? (store.snapshots[account.id]?.notice ?? "等待首次读取额度") : "已暂停刷新", size: 11, color: .secondaryLabelColor))
             } else {
-                for offset in stride(from: 0, to: metrics.count, by: 3) {
-                    let metricsRow = horizontalStack(spacing: 18)
-                    metricsRow.distribution = .fillEqually
-                    metricsRow.alignment = .top
-                    for metric in metrics[offset..<min(offset + 3, metrics.count)] {
-                        metricsRow.addArrangedSubview(metricView(metric, account: account))
-                    }
-                    addFullWidth(metricsRow, to: row)
-                }
+                addFullWidth(metricsTable(metrics, account: account), to: row)
             }
             if !metrics.isEmpty, let notice = store.snapshots[account.id]?.notice {
                 let warning = label(notice, size: 11, color: .systemOrange)
@@ -326,25 +318,103 @@ final class ManagementController: NSViewController {
         }
     }
 
+    private func metricsTable(_ metrics: [QuotaMetric], account: Account) -> NSView {
+        let table = verticalStack(spacing: 4)
+        let header = horizontalStack(spacing: 12)
+        let name = metricText("额度项目", size: 10, color: .secondaryLabelColor)
+        header.addArrangedSubview(name)
+        header.addArrangedSubview(horizontalSpacer())
+        let remaining = metricText("剩余", size: 10, color: .secondaryLabelColor)
+        remaining.alignment = .right
+        remaining.widthAnchor.constraint(equalToConstant: 92).isActive = true
+        header.addArrangedSubview(remaining)
+        let reset = metricText("重置时间", size: 10, color: .secondaryLabelColor)
+        reset.alignment = .right
+        reset.widthAnchor.constraint(equalToConstant: 112).isActive = true
+        header.addArrangedSubview(reset)
+        addFullWidth(header, to: table)
+        table.setCustomSpacing(8, after: header)
+
+        let quotas = metrics.filter { !$0.isBalance && $0.category != .purchased }
+        let balances = metrics.filter { $0.isBalance || $0.category == .purchased }
+        for metric in quotas { addFullWidth(metricView(metric, account: account), to: table) }
+        if !quotas.isEmpty && !balances.isEmpty {
+            let divider = NSBox()
+            divider.boxType = .separator
+            addFullWidth(divider, to: table)
+            table.setCustomSpacing(6, after: divider)
+        }
+        for metric in balances { addFullWidth(metricView(metric, account: account), to: table) }
+        return table
+    }
+
+    private func metricText(_ text: String, size: CGFloat, color: NSColor = .labelColor) -> NSTextField {
+        let field = NSTextField(labelWithString: text)
+        field.font = .systemFont(ofSize: size)
+        field.textColor = color
+        field.lineBreakMode = .byTruncatingTail
+        field.maximumNumberOfLines = 1
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.required, for: .vertical)
+        field.toolTip = text
+        return field
+    }
+
     private func metricView(_ metric: QuotaMetric, account: Account) -> NSView {
-        let column = verticalStack(spacing: 5)
+        let row = horizontalStack(spacing: 12)
+        row.heightAnchor.constraint(greaterThanOrEqualToConstant: 26).isActive = true
         let isSupplemental = account.supplementalMetrics.contains { $0.id == metric.id }
-        let annotation = (metric.category == .purchased ? " · 加购" : "") + (isSupplemental ? " · 手动" : "")
-        column.addArrangedSubview(label("\(metric.label)\(annotation)", size: 11, color: .secondaryLabelColor))
+        let balance = metric.isBalance || metric.category == .purchased
+        let annotation = (metric.category == .purchased ? " · 加购" : metric.isBalance ? " · 余额" : "") + (isSupplemental ? " · 手动" : "")
+        let title = metricText(metric.label + annotation, size: 12)
+        title.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        row.addArrangedSubview(title)
+        // Activate only after both views have a common ancestor.
+        // Reserve identical columns on every row, including balance rows.
+        title.widthAnchor.constraint(equalTo: row.widthAnchor, constant: -(68 + 92 + 112 + 3 * 12)).isActive = true
+
+        let low = !balance && !metric.isUnlimited && metric.remainingPercent <= store.config.lowQuotaThreshold
+        let bar: NSView
+        if balance || metric.isUnlimited { bar = NSView() }
+        else {
+            bar = OverviewQuotaBar(fraction: metric.remainingPercent / 100, low: low)
+        }
+        bar.widthAnchor.constraint(equalToConstant: 68).isActive = true
+        bar.heightAnchor.constraint(equalToConstant: 5).isActive = true
+        row.addArrangedSubview(bar)
+
         let value: String
         if metric.isUnlimited { value = "不限量" }
-        else if metric.isBalance || metric.category == .purchased { value = "\(number(metric.remaining)) \(metric.unit)" }
-        else { value = "\(Int(metric.remainingPercent.rounded()))% 剩余" }
-        let low = !metric.isBalance && metric.category != .purchased && metric.remainingPercent <= store.config.lowQuotaThreshold
-        column.addArrangedSubview(label(value, size: 17, weight: .medium, color: low ? .systemOrange : .labelColor))
-        if !metric.isBalance && metric.category != .purchased && metric.unit != "%" {
-            column.addArrangedSubview(label("\(number(metric.remaining)) / \(number(metric.total)) \(metric.unit)", size: 10, color: .secondaryLabelColor))
+        else if balance { value = "\(number(metric.remaining)) \(metric.unit)" }
+        else { value = "\(Int(metric.remainingPercent.rounded()))%" }
+        let amount = metricText(value, size: 13, color: low ? .systemOrange : .labelColor)
+        amount.font = .monospacedDigitSystemFont(ofSize: 13, weight: .medium)
+        amount.alignment = .right
+        amount.widthAnchor.constraint(equalToConstant: 92).isActive = true
+        amount.setAccessibilityLabel("剩余 \(value)")
+        if !balance && !metric.isUnlimited && metric.unit != "%" {
+            let quantity = "剩余 \(number(metric.remaining)) / \(number(metric.total)) \(metric.unit)"
+            title.toolTip = metric.label + "\n" + quantity
+            amount.toolTip = quantity
+            amount.setAccessibilityLabel("剩余 \(value)，" + quantity)
         }
-        if let resetsAt = metric.resetsAt {
-            let text = resetsAt > Date() ? "重置：\(resetsAt.formatted(date: .abbreviated, time: .shortened))" : "已到重置时间，等待更新"
-            column.addArrangedSubview(label(text, size: 10, color: .secondaryLabelColor))
+        row.addArrangedSubview(amount)
+
+        let reset: NSTextField
+        if let date = metric.resetsAt {
+            let formatter = DateFormatter()
+            formatter.dateFormat = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year) ? "MM-dd HH:mm" : "yyyy-MM-dd HH:mm"
+            reset = metricText(date > Date() ? formatter.string(from: date) : "等待更新", size: 11, color: .secondaryLabelColor)
+            reset.toolTip = "重置：" + date.formatted(date: .complete, time: .shortened)
+            reset.setAccessibilityLabel(reset.toolTip)
+        } else {
+            reset = metricText("—", size: 11, color: .tertiaryLabelColor)
+            reset.toolTip = "未提供重置时间"
         }
-        return column
+        reset.alignment = .right
+        reset.widthAnchor.constraint(equalToConstant: 112).isActive = true
+        row.addArrangedSubview(reset)
+        return row
     }
 
     private func renderAccounts() {
@@ -502,8 +572,13 @@ final class ManagementController: NSViewController {
     private func presetPicker() -> NSPopUpButton {
         let picker = NSPopUpButton(frame: .zero, pullsDown: true)
         picker.addItem(withTitle: "添加工具")
+        picker.menu?.autoenablesItems = false
         for (index, preset) in PresetCatalog.items.enumerated() {
-            let item = NSMenuItem(title: "\(preset.name) · \(preset.method)", action: #selector(addPreset(_:)), keyEquivalent: "")
+            let candidate = preset.makeTool()
+            let exists = store.config.tools.contains { $0.representsSameTool(as: candidate) }
+            let title = exists ? "\(preset.name) · 已添加" : "\(preset.name) · \(preset.method)"
+            let item = NSMenuItem(title: title, action: #selector(addPreset(_:)), keyEquivalent: "")
+            item.isEnabled = !exists
             item.target = self
             item.representedObject = NSNumber(value: index)
             picker.menu?.addItem(item)
@@ -519,7 +594,13 @@ final class ManagementController: NSViewController {
 
     @objc private func addPreset(_ sender: NSMenuItem) {
         guard let index = (sender.representedObject as? NSNumber)?.intValue else { return }
-        editTool(index >= 0 && index < PresetCatalog.items.count ? PresetCatalog.items[index].makeTool() : ToolDefinition(name: "", provider: .httpJSON))
+        let candidate = index >= 0 && index < PresetCatalog.items.count ? PresetCatalog.items[index].makeTool() : ToolDefinition(name: "", provider: .httpJSON)
+        // An already-open menu can become stale after configuration changes.
+        if let existing = store.config.tools.first(where: { $0.representsSameTool(as: candidate) }) {
+            editTool(existing)
+        } else {
+            editTool(candidate)
+        }
     }
 
     private func editTool(_ tool: ToolDefinition) {
@@ -689,4 +770,30 @@ private final class ManagementActionButton: NSButton {
 
 private final class ManagementDocumentStack: NSStackView {
     override var isFlipped: Bool { true }
+}
+
+
+/// Decorative progress only; the adjacent text exposes the exact remaining value.
+@MainActor
+private final class OverviewQuotaBar: NSView {
+    private let fraction: Double
+    private let low: Bool
+
+    init(fraction: Double, low: Bool) {
+        self.fraction = min(1, max(0, fraction))
+        self.low = low
+        super.init(frame: .zero)
+        setAccessibilityElement(false)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.quaternaryLabelColor.setFill()
+        NSBezierPath(roundedRect: bounds, xRadius: 2.5, yRadius: 2.5).fill()
+        guard fraction > 0 else { return }
+        (low ? NSColor.systemOrange : NSColor.systemTeal).setFill()
+        let fill = NSRect(x: bounds.minX, y: bounds.minY, width: bounds.width * fraction, height: bounds.height)
+        NSBezierPath(roundedRect: fill, xRadius: 2.5, yRadius: 2.5).fill()
+    }
 }

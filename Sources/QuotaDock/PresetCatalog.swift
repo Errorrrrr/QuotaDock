@@ -24,7 +24,7 @@ enum PresetCatalog {
         .init(name: "Kimi", method: "CLI 本地服务 · 套餐及加购", makeTool: { .init(name: "Kimi", symbol: "moon.stars", colorHex: "577584", provider: .kimiCLI, brandID: "kimi") }),
         .init(name: "智谱 GLM", method: "CLI 配置 · Coding Plan", makeTool: { .init(name: "智谱 GLM", symbol: "sparkles", colorHex: "4B64DC", provider: .glmCLI, brandID: "glm") }),
         cli("通义千问", symbol: "cloud", color: "A15BB5", brandID: "qwen", provider: .qwenCLI),
-        .init(name: "Antigravity", method: "官方 CLI · 后台自动刷新", makeTool: { .init(name: "Antigravity", symbol: "sparkles", colorHex: "4B64DC", provider: .antigravityCLI, brandID: "antigravity") }),
+        .init(name: "Antigravity", method: "桌面登录 · 套餐及 AI Credits", makeTool: { .init(name: "Antigravity", symbol: "sparkles", colorHex: "4B64DC", provider: .antigravityDesktop, brandID: "antigravity") }),
         cli("GitHub Copilot", symbol: "chevron.left.forwardslash.chevron.right", color: "577584", brandID: "copilot", provider: .copilotCLI)
     ]
 
@@ -47,7 +47,7 @@ enum PresetCatalog {
         case "kimi": return .init(title: "Kimi Code CLI · 本地服务", detail: "运行 kimi web --no-open，在账号中填写本地地址和访问 Token。自动读取套餐窗口、加购余额、昵称和套餐；各账号需连接各自已登录的服务。")
         case "qwen": return .init(title: "Qwen Code CLI · 本机用量", detail: "读取独立 QWEN_HOME 的已保存统计，不调用模型。统计在控制台展示；CLI 未提供账号剩余额度，可手动补充。")
         case "claude": return .init(title: "Claude Code · 后台自动刷新", detail: "复用 CLI OAuth 登录查询订阅额度和额外用量预算。支持独立配置目录；可配置同账号快照作为失败备用。")
-        case "antigravity": return .init(title: "Antigravity CLI · 后台自动刷新", detail: "调用 agy 只读 /usage、/credits 查询当前登录账号，不启动模型对话。可配置快照备用；独立多账号暂用各自快照。")
+        case "antigravity": return .init(title: "Antigravity · 后台自动刷新", detail: "桌面接入读取当前登录账号的套餐、AI Credits 和额度，需要桌面应用运行。CLI 与快照仍可单独选择；不会混用两处登录账号。")
         case "copilot": return .init(title: "GitHub Copilot CLI · 官方额度", detail: "通过官方 account.getQuota RPC 读取高级请求、聊天、补全额度与重置时间。支持独立 COPILOT_HOME；超额消费不当作加购余额。")
         case "glm": return .init(title: "GLM Coding Plan · CLI 配置", detail: "选择已配置 GLM 的 Claude Code settings.json，查询官方插件使用的 Coding Plan 额度接口。支持智谱与 Z.ai，不启动模型会话；ZCode 独立登录尚未适配。")
         case "openrouter": return .init(title: "Ori CLI · 密钥额度", detail: "读取所选 Ori 明文登录文件，通过官方接口获取密钥剩余额度。加密/OIDC 存储暂不支持，账户总余额仍可用官方 API 接入。")
@@ -70,6 +70,7 @@ enum PresetCatalog {
         case .kimiCLI: return "连接已登录的 Kimi Code CLI 本地服务；只读取额度和账号信息，访问 Token 单独存入钥匙串。"
         case .glmCLI: return "读取指定 Claude Code 配置中的 GLM 认证信息，直接请求官方 Coding Plan 额度接口，不复制凭据或调用模型。"
         case .claudeOAuth: return "使用 Claude Code 本地 OAuth 登录，后台查询 5 小时、每周额度及额外用量预算。可指定同账号备用快照；登录过期由官方 CLI 更新。"
+        case .antigravityDesktop: return "读取正在运行的官方桌面应用，仅在本机只读查询套餐和额度。不读取钥匙串，会话令牌只在内存使用，不保存、不输出。"
         case .antigravityCLI: return "通过 agy 的只读命令自动查询当前登录账号额度和 AI Credits，不调用模型。可指定备用快照。"
         case .claudeSnapshot: return "读取 Claude Code 官方 statusLine 输出的额度快照，不提取 OAuth 凭据。需要手动配置状态栏桥接脚本。"
         }

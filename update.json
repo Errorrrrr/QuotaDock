@@ -1,8 +1,8 @@
 {
-  "version": "0.1.2",
-  "notes": "新增 Antigravity 桌面套餐与 AI Credits 查询；阻止重复添加工具；修复添加表单重叠，优化多额度总览。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.2",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.2/QuotaDock-0.1.2-macOS-arm64.zip",
+  "version": "0.1.4",
+  "notes": "修复发布前测试与发布后更新清单的顺序冲突：允许已发布版本低于或等于当前构建版本，安装包发布成功后才更新清单，保留严格的清单解析与下载地址校验。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.4",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.4/QuotaDock-0.1.4-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.1.6",
-  "notes": "应用内下载安装更新，显示下载进度；完成校验后自动安装并重启，保留账号配置。安装失败保留旧版本，启动失败尝试回退。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.6",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.6/QuotaDock-0.1.6-macOS-arm64.zip",
+  "version": "0.1.7",
+  "notes": "DeepSeek Harness 接入支持直接填写 API Key：凭据仅保存到 QuotaDock 钥匙串，不修改 Harness 本地配置。没有已保存 Key 时读取本地 Harness；编辑时可移除已保存 Key，恢复本地读取。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.7",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.7/QuotaDock-0.1.7-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

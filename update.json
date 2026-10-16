@@ -1,8 +1,8 @@
 {
-  "version": "0.1.7",
-  "notes": "DeepSeek Harness 接入支持直接填写 API Key：凭据仅保存到 QuotaDock 钥匙串，不修改 Harness 本地配置。没有已保存 Key 时读取本地 Harness；编辑时可移除已保存 Key，恢复本地读取。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.7",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.7/QuotaDock-0.1.7-macOS-arm64.zip",
+  "version": "0.1.8",
+  "notes": "改善账号添加界面：DeepSeek 账号名称改为必填并直接展示，用于账号列表和菜单栏；余额接口不提供昵称时不再自动生成“账号 1”。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.8",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.8/QuotaDock-0.1.8-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

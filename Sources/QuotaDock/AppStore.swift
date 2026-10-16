@@ -135,7 +135,8 @@ final class AppStore: ObservableObject {
                     credential = try self.keychain.token(for: accountID)
                     result = try await HTTPQuotaProvider().fetch(tool: tool, account: account, token: credential)
                 case .codexCLI, .claudeOAuth, .antigravityCLI, .antigravityDesktop, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI:
-                    result = try await LocalAccountConnection.fetch(provider: tool.provider, account: account)
+                    if tool.provider == .deepseekCLI { credential = try self.keychain.token(for: accountID) }
+                    result = try await LocalAccountConnection.fetch(provider: tool.provider, account: account, token: credential)
                 case .claudeSnapshot:
                     result = try await ClaudeSnapshotProvider().fetch(account: account)
                 case .antigravitySnapshot:
@@ -222,7 +223,7 @@ final class AppStore: ObservableObject {
 
     /// Resolve the selected local login before saving. Failed/cancelled discovery
     /// leaves configuration untouched; success reuses the first fetched snapshot.
-    func connectLocalAccount(_ account: Account) async throws {
+    func connectLocalAccount(_ account: Account, token: String? = nil) async throws {
         guard !isDemo, let tool = tool(for: account), tool.provider.supportsDefaultLogin,
               !config.accounts.contains(where: { $0.id == account.id }) else {
             throw StoreError.invalidConfiguration("请选择支持读取本机登录的工具。")
@@ -230,12 +231,13 @@ final class AppStore: ObservableObject {
         var candidate = config
         candidate.accounts.append(account)
         try validate(candidate)
-        let snapshot = try await LocalAccountConnection.fetch(provider: tool.provider, account: account)
+        let selectedToken = tool.provider == .deepseekCLI ? token : nil
+        let snapshot = try await LocalAccountConnection.fetch(provider: tool.provider, account: account, token: selectedToken)
         try Task.checkCancellation()
         guard !isDemo, self.tool(for: account) == tool else {
             throw StoreError.invalidConfiguration("工具配置已变化，请重新添加账号。")
         }
-        try saveAccount(account, token: nil, initialSnapshot: snapshot)
+        try saveAccount(account, token: selectedToken, initialSnapshot: snapshot)
     }
 
     func selectMenuBarMetric(accountID: UUID, metricID: String?) throws {

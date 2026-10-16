@@ -135,6 +135,8 @@ QuotaDock 只读取这两个字段，按官方额度插件的协议发起只读�
 
 选择“DeepSeek Harness · API 余额”，填写独立 `DSH_HOME`；留空采用环境配置或 `~/.dsh`。
 
+可在 QuotaDock 添加账号时直接填写 API Key：仅保存到 QuotaDock 自身钥匙串，优先用于该账号的查询，不修改 Harness 文件。未填写且没有已保存 Key 时才读取本地。编辑时留空保留已有 Key；勾选“移除已保存的 Key，改用本地 Harness”可恢复本地读取。Key 查询失败不会回退到其他凭据。
+
 只读取 `.credentials.yaml` 旧版顶层或 version 1 `refs` 中的 `DEEPSEEK_API_KEY`，不存在时尝试同目录 `.env`。管理凭据文件需权限 600。支持普通、单引号和 JSON 双引号标量；拒绝 YAML 标签/别名/插值与重复键，不执行脚本，也不混入启动 QuotaDock 时的其他账号 API Key。
 
 查询 `https://api.deepseek.com/user/balance`，按响应分别展示 CNY/USD 当前余额，不混合币种。当前支持 API Key 模式，Harness 浏览器登录的独立 grant 存储尚未验证，不会把其 token 当 API Key 使用。

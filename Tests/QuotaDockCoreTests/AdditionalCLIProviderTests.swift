@@ -79,6 +79,53 @@ final class AdditionalCLIProviderTests: XCTestCase {
         XCTAssertEqual(balances.metrics.map(\.unit), ["CNY", "USD"])
     }
 
+    func testHarnessAcceptsOpaqueKeysWithoutAssumingPrefix() throws {
+        XCTAssertEqual(try DeepSeekCLIQuotaProvider.credential(data("version: 1\nrefs:\n  DEEPSEEK_API_KEY: opaque-test_123.456\n"), separator: ":"), "opaque-test_123.456")
+        XCTAssertEqual(try DeepSeekCLIQuotaProvider.credential(data("DEEPSEEK_API_KEY=opaque-test"), separator: "="), "opaque-test")
+        for value in ["", "!include secret", "*alias", "bad token", "密钥", "{record: id}"] {
+            XCTAssertThrowsError(try DeepSeekCLIQuotaProvider.credential(data("DEEPSEEK_API_KEY: " + value), separator: ":")) { error in
+                XCTAssertEqual(error as? DeepSeekCLIError, .invalidCredential)
+            }
+        }
+        XCTAssertThrowsError(try DeepSeekCLIQuotaProvider.parse(data("{}"))) { error in
+            XCTAssertEqual(error as? DeepSeekCLIError, .invalidBalance)
+        }
+    }
+
+    func testHarnessFetchUsesSelectedOpaqueKey() async throws {
+        let dir = try directory()
+        let file = dir.appendingPathComponent(".credentials.yaml")
+        try data("version: 1\nrefs:\n  DEEPSEEK_API_KEY: opaque-test\n").write(to: file)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        let provider = DeepSeekCLIQuotaProvider { request in
+            XCTAssertEqual(request.url?.absoluteString, "https://api.deepseek.com/user/balance")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer opaque-test")
+            return Data(#"{"balance_infos":[{"currency":"CNY","total_balance":"12.3"}]}"#.utf8)
+        }
+        let result = try await provider.fetch(account: .init(toolID: UUID(), name: "Alias", externalID: dir.path))
+        XCTAssertEqual(result.metrics.first?.remainingBalance, 12.3)
+    }
+
+    func testHarnessOverrideDoesNotReadOrModifyLocalCredentials() async throws {
+        let dir = try directory()
+        let file = dir.appendingPathComponent(".credentials.yaml")
+        let original = data("invalid local credentials")
+        try original.write(to: file)
+        let provider = DeepSeekCLIQuotaProvider { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer override-test")
+            return Data(#"{"balance_infos":[{"currency":"CNY","total_balance":"1"}]}"#.utf8)
+        }
+        let account = Account(toolID: UUID(), name: "Alias", externalID: dir.path)
+        _ = try await provider.fetch(account: account, token: "override-test")
+        XCTAssertEqual(try Data(contentsOf: file), original)
+        let failing = DeepSeekCLIQuotaProvider { _ in throw CLIQuotaError.upstream }
+        do {
+            _ = try await failing.fetch(account: account, token: "override-test")
+            XCTFail("Must propagate the override failure without reading local credentials")
+        } catch { XCTAssertTrue(error is CLIQuotaError) }
+        XCTAssertEqual(try Data(contentsOf: file), original)
+    }
+
     func testQwenHistoryDeduplicatesAndNeverCreatesQuota() throws {
         let now = Date()
         let stamp = now.timeIntervalSince1970 * 1000

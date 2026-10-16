@@ -252,7 +252,7 @@ final class AccountEditorController: NSViewController {
         EditorForm.add(EditorForm.row(tokenLabel, tokenField), to: credentials)
         EditorForm.add(removeTokenButton, to: credentials, stretch: false)
         EditorForm.add(credentialNote, to: credentials)
-        EditorForm.add(credentials, to: advancedContent)
+        EditorForm.add(credentials, to: content)
 
         EditorForm.add(EditorForm.note("这是手动记录，不会自动获取服务商数据。"), to: manualContent)
         for metric in account.manualMetrics { addManual(metric) }
@@ -292,14 +292,16 @@ final class AccountEditorController: NSViewController {
         quickNote.isHidden = !quick
         advancedContent.isHidden = quick && !advancedExpanded
         advancedButton.title = advancedExpanded ? "收起高级设置" : "高级设置 · 其他账号 / 备用快照"
-        quickNote.stringValue = selectedTool?.provider == .antigravityDesktop
+        quickNote.stringValue = selectedTool?.provider == .deepseekCLI
+            ? "可直接填写 API Key，仅保存到 QuotaDock 钥匙串；未填写时读取本地 Harness 配置。"
+            : selectedTool?.provider == .antigravityDesktop
             ? "请先打开并登录 Antigravity 桌面应用，点击即可读取账号、套餐和额度。"
             : selectedTool?.provider == .antigravityCLI
             ? "直接读取 Antigravity 当前登录账号，无需填写名称或凭据。"
             : "直接读取此工具已登录的账号，无需填写名称或凭据。其他账号可在高级设置中选择登录目录。"
         nameField.placeholderString = selectedTool?.provider.supportsDefaultLogin == true ? "留空使用识别到的账号名" : "可选：个人账号 / 工作账号"
         primaryButton?.title = quick ? "读取并添加" : (isExisting ? "保存账号" : "添加账号")
-        preferredContentSize = NSSize(width: 610, height: quick && !advancedExpanded ? 280 : 650)
+        preferredContentSize = NSSize(width: 610, height: quick && !advancedExpanded ? (selectedTool?.provider == .deepseekCLI ? 440 : 280) : 650)
     }
 
     @objc private func toolChanged() {
@@ -331,7 +333,12 @@ final class AccountEditorController: NSViewController {
             externalRow?.isHidden = true
             return
         }
-        credentials.isHidden = ![.httpJSON, .kimiCLI].contains(tool.provider)
+        credentials.isHidden = ![.httpJSON, .kimiCLI, .deepseekCLI].contains(tool.provider)
+        removeTokenButton.isHidden = !isExisting
+        removeTokenButton.title = tool.provider == .deepseekCLI ? "移除已保存的 Key，改用本地 Harness" : "移除已保存的凭据"
+        tokenField.placeholderString = tool.provider == .deepseekCLI
+            ? (isExisting ? "留空保留已有 Key；未保存过则读取 Harness" : "可选：留空读取本地 Harness")
+            : "留空保留已有凭据"
         manualContent.isHidden = tool.provider != .manual
         externalRow?.isHidden = [.manual, .antigravityCLI, .antigravityDesktop].contains(tool.provider)
         fallbackRow?.isHidden = ![.claudeOAuth, .antigravityCLI].contains(tool.provider)
@@ -382,7 +389,10 @@ final class AccountEditorController: NSViewController {
         case .deepseekCLI:
             externalLabel.stringValue = "DSH_HOME"
             externalField.placeholderString = "留空使用默认 ~/.dsh"
-            providerNote.stringValue = "从 Harness 的 .credentials.yaml 或 .env 读取 DEEPSEEK_API_KEY，查询官方余额。多账号使用独立目录；暂不支持浏览器登录记录。"
+            providerNote.stringValue = "未保存 Key 时，从此目录的 .credentials.yaml 或 .env 读取凭据。仅只读访问，不修改 Harness 配置；暂不支持浏览器登录记录。"
+            tokenLabel.stringValue = "DeepSeek API Key（可选）"
+            tokenField.setAccessibilityLabel(tokenLabel.stringValue)
+            credentialNote.stringValue = "填写后优先使用此 Key，仅保存到 QuotaDock 钥匙串并发送至 api.deepseek.com。各账号独立保存，不影响 Harness。"
         case .glmCLI:
             externalLabel.stringValue = "CLI 配置文件"
             externalField.placeholderString = "~/.claude-glm/settings.json"
@@ -452,6 +462,7 @@ final class AccountEditorController: NSViewController {
             view.subviews.forEach(update)
         }
         update(advancedContent)
+        update(credentials)
         advancedButton.isEnabled = enabled
     }
 
@@ -476,7 +487,7 @@ final class AccountEditorController: NSViewController {
             if tool.provider == .manual { updated.manualMetrics = try manualRows.map { try $0.value() } }
             updated.supplementalMetrics = try supplementalRows.map { try $0.value() }
             let token: String?
-            if [.httpJSON, .kimiCLI].contains(tool.provider) {
+            if [.httpJSON, .kimiCLI, .deepseekCLI].contains(tool.provider) {
                 token = removeTokenButton.state == .on ? "" : (tokenField.stringValue.isEmpty ? nil : tokenField.stringValue)
             } else {
                 token = nil
@@ -499,7 +510,7 @@ final class AccountEditorController: NSViewController {
                         self.activity.isHidden = true
                     }
                     do {
-                        try await self.store.connectLocalAccount(updated)
+                        try await self.store.connectLocalAccount(updated, token: token)
                         self.onComplete()
                     } catch is CancellationError {
                     } catch {

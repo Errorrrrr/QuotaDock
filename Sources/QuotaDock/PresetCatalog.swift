@@ -51,7 +51,7 @@ enum PresetCatalog {
         case "copilot": return .init(title: "GitHub Copilot CLI · 官方额度", detail: "通过官方 account.getQuota RPC 读取高级请求、聊天、补全额度与重置时间。支持独立 COPILOT_HOME；超额消费不当作加购余额。")
         case "glm": return .init(title: "GLM Coding Plan · CLI 配置", detail: "选择已配置 GLM 的 Claude Code settings.json，查询官方插件使用的 Coding Plan 额度接口。支持智谱与 Z.ai，不启动模型会话；ZCode 独立登录尚未适配。")
         case "openrouter": return .init(title: "Ori CLI · 密钥额度", detail: "读取所选 Ori 明文登录文件，通过官方接口获取密钥剩余额度。加密/OIDC 存储暂不支持，账户总余额仍可用官方 API 接入。")
-        case "deepseek": return .init(title: "DeepSeek Harness · API 余额", detail: "读取独立 DSH_HOME 内的 DEEPSEEK_API_KEY 并查询官方余额。不需要重复填写 Key；浏览器登录暂不支持。")
+        case "deepseek": return .init(title: "DeepSeek Harness · API 余额", detail: "添加账号时可填写 API Key，仅保存在 QuotaDock 钥匙串；未填写则读取 DSH_HOME，不修改 Harness 配置。浏览器登录暂不支持。")
         default: return nil
         }
     }
@@ -62,7 +62,7 @@ enum PresetCatalog {
         case .cursorCLI: return "读取 Cursor CLI 登录账号，通过 CLI 内置接口查询额度。"
         case .qwenCLI: return "读取 Qwen CLI 本机已保存统计，明确区分用量与账号剩余额度。"
         case .oriCLI: return "读取 Ori CLI 明文登录记录，查询 OpenRouter 密钥剩余额度。"
-        case .deepseekCLI: return "使用 DeepSeek Harness 配置中的 API Key 查询官方余额。"
+        case .deepseekCLI: return "优先使用 QuotaDock 保存的 Key，未填写则读取 Harness，查询官方余额。"
         case .manual: return "手动填写服务商显示的额度，适用于补充记录或尚未适配自动读取的服务。"
         case .httpJSON: return "连接官方或自有 HTTPS JSON 接口。支持多窗口、余额和字段映射，每个账号分别保存凭据。"
         case .codexCLI: return "通过本机 Codex CLI 的官方 app-server 读取订阅限额；需安装 CLI 并已登录 ChatGPT 账号。API Key 模式不提供订阅额度。"

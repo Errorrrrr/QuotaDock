@@ -1,8 +1,8 @@
 {
-  "version": "0.1.5",
-  "notes": "新增可拖拽安装的 DMG：打开磁盘映像，将 QuotaDock 拖入 Applications。继续提供 ZIP，应用内检查更新仍下载 ZIP，更新协议保持不变。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.5",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.5/QuotaDock-0.1.5-macOS-arm64.zip",
+  "version": "0.1.6",
+  "notes": "应用内下载安装更新，显示下载进度；完成校验后自动安装并重启，保留账号配置。安装失败保留旧版本，启动失败尝试回退。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.6",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.6/QuotaDock-0.1.6-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

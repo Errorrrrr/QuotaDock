@@ -149,6 +149,8 @@ final class AccountEditorController: NSViewController {
     private let toolPicker = NSPopUpButton()
     private let menuBarMetricPicker = NSPopUpButton()
     private let nameField = NSTextField(string: "")
+    private let accountNameLabel = NSTextField(labelWithString: "账号别名（可选）")
+    private let accountNameNote = EditorForm.note("")
     private let subtitleField = NSTextField(string: "")
     private let enabledButton = NSButton(checkboxWithTitle: "启用自动刷新与菜单栏展示", target: nil, action: nil)
     private let externalField = NSTextField(string: "")
@@ -216,6 +218,8 @@ final class AccountEditorController: NSViewController {
         let content = EditorForm.column()
         EditorForm.add(EditorForm.row("所属工具", toolPicker), to: content)
         EditorForm.add(quickNote, to: content)
+        EditorForm.add(EditorForm.row(accountNameLabel, nameField), to: content)
+        EditorForm.add(accountNameNote, to: content)
         advancedButton.bezelStyle = .recessed
         advancedButton.target = self
         advancedButton.action = #selector(toggleAdvanced)
@@ -223,12 +227,10 @@ final class AccountEditorController: NSViewController {
         EditorForm.add(advancedContent, to: content)
         EditorForm.add(activity, to: content)
         activity.isHidden = true
-        EditorForm.add(EditorForm.row("账号别名（可选）", nameField), to: advancedContent)
         if let snapshot = store.snapshots[account.id] {
             let identity = [snapshot.accountName, snapshot.accountEmail].compactMap { $0 }.joined(separator: " · ")
             if !identity.isEmpty { EditorForm.add(EditorForm.row("已登录账号", EditorForm.note(identity)), to: advancedContent) }
         }
-        EditorForm.add(EditorForm.note("支持读取账号信息的工具优先显示真实账号；读取不到时使用此别名。"), to: advancedContent)
         EditorForm.add(EditorForm.row("备注", subtitleField), to: advancedContent)
         EditorForm.add(enabledButton, to: advancedContent, stretch: false)
         EditorForm.add(EditorForm.row("菜单栏显示额度", menuBarMetricPicker), to: advancedContent)
@@ -299,9 +301,12 @@ final class AccountEditorController: NSViewController {
             : selectedTool?.provider == .antigravityCLI
             ? "直接读取 Antigravity 当前登录账号，无需填写名称或凭据。"
             : "直接读取此工具已登录的账号，无需填写名称或凭据。其他账号可在高级设置中选择登录目录。"
-        nameField.placeholderString = selectedTool?.provider.supportsDefaultLogin == true ? "留空使用识别到的账号名" : "可选：个人账号 / 工作账号"
+        let needsName = selectedTool?.resolvedBrandID == "deepseek"
+        accountNameLabel.stringValue = needsName ? "账号名称" : "账号别名（可选）"
+        accountNameNote.stringValue = needsName ? "DeepSeek 余额接口不返回昵称。请填写用于账号列表和菜单栏的名称，例如：个人账号。" : "支持读取账号信息的工具优先显示真实账号；读取不到时使用此别名。"
+        nameField.placeholderString = needsName ? "必填：个人账号 / 工作账号" : (selectedTool?.provider.supportsDefaultLogin == true ? "留空使用识别到的账号名" : "可选：个人账号 / 工作账号")
         primaryButton?.title = quick ? "读取并添加" : (isExisting ? "保存账号" : "添加账号")
-        preferredContentSize = NSSize(width: 610, height: quick && !advancedExpanded ? (selectedTool?.provider == .deepseekCLI ? 440 : 280) : 650)
+        preferredContentSize = NSSize(width: 610, height: quick && !advancedExpanded ? (selectedTool?.provider == .deepseekCLI ? 520 : 360) : 650)
     }
 
     @objc private func toolChanged() {
@@ -390,7 +395,7 @@ final class AccountEditorController: NSViewController {
             externalLabel.stringValue = "DSH_HOME"
             externalField.placeholderString = "留空使用默认 ~/.dsh"
             providerNote.stringValue = "未保存 Key 时，从此目录的 .credentials.yaml 或 .env 读取凭据。仅只读访问，不修改 Harness 配置；暂不支持浏览器登录记录。"
-            tokenLabel.stringValue = "DeepSeek API Key（可选）"
+            tokenLabel.stringValue = "API Key"
             tokenField.setAccessibilityLabel(tokenLabel.stringValue)
             credentialNote.stringValue = "填写后优先使用此 Key，仅保存到 QuotaDock 钥匙串并发送至 api.deepseek.com。各账号独立保存，不影响 Harness。"
         case .glmCLI:
@@ -463,6 +468,7 @@ final class AccountEditorController: NSViewController {
         }
         update(advancedContent)
         update(credentials)
+        nameField.isEnabled = enabled
         advancedButton.isEnabled = enabled
     }
 
@@ -473,6 +479,9 @@ final class AccountEditorController: NSViewController {
             guard let tool = selectedTool else { throw EditorInputError.message("请先选择一个已配置的工具。") }
             var updated = account
             let alias = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if tool.resolvedBrandID == "deepseek", alias.isEmpty {
+                throw EditorInputError.message("请填写账号名称；DeepSeek 余额接口不返回昵称。")
+            }
             if alias.isEmpty {
                 let names = Set(store.config.accounts.filter { $0.toolID == tool.id }.map(\.name))
                 var number = 1
@@ -690,6 +699,18 @@ private final class EditorDocumentView: NSView {
 }
 
 @MainActor
+/// Recompute multiline height after the scroll view establishes its actual width.
+private final class EditorWrappingLabel: NSTextField {
+    override func layout() {
+        if bounds.width > 0, abs(preferredMaxLayoutWidth - bounds.width) > 0.5 {
+            preferredMaxLayoutWidth = bounds.width
+            invalidateIntrinsicContentSize()
+        }
+        super.layout()
+    }
+}
+
+@MainActor
 private enum EditorForm {
     static func column() -> NSStackView {
         let stack = NSStackView()
@@ -715,6 +736,12 @@ private enum EditorForm {
         label.font = .systemFont(ofSize: NSFont.systemFontSize)
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.maximumNumberOfLines = 0
+        label.cell?.wraps = true
+        label.cell?.isScrollable = false
+        label.lineBreakMode = .byWordWrapping
+        label.preferredMaxLayoutWidth = 124
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.widthAnchor.constraint(equalToConstant: 124).isActive = true
         label.setAccessibilityElement(false)
         if let field = control as? NSTextField {
@@ -732,7 +759,7 @@ private enum EditorForm {
     }
 
     static func note(_ text: String) -> NSTextField {
-        let label = NSTextField(wrappingLabelWithString: text)
+        let label = EditorWrappingLabel(wrappingLabelWithString: text)
         label.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         label.textColor = .secondaryLabelColor
         label.maximumNumberOfLines = 0
@@ -802,6 +829,8 @@ private enum EditorForm {
         content.translatesAutoresizingMaskIntoConstraints = false
         document.addSubview(content)
         NSLayoutConstraint.activate([
+            document.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            document.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
             document.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
             content.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: 20),
             content.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -20),

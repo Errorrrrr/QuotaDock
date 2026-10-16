@@ -14,8 +14,12 @@
 
 首次添加或修改 workflow 时，GitHub 凭据需要相应 workflow 写入权限。正常运行不需要额外仓库密钥；构建任务只读，发布任务使用 GitHub 自带 GITHUB_TOKEN 的 contents:write 权限。不要将个人账号令牌或额度账号配置加入 Actions。
 
-应用手动读取 `raw.githubusercontent.com/Errorrrrr/QuotaDock/main/update.json`，不依赖 GitHub API 配额、不携带账号身份或额度资料。更新按钮打开浏览器下载，用户自行退出后替换安装。当前为 ad-hoc 签名，尚未使用 Developer ID 签名及 Apple 公证。
+应用手动读取 `raw.githubusercontent.com/Errorrrrr/QuotaDock/main/update.json`，不依赖 GitHub API 配额、不携带账号身份或额度资料。更新按钮在应用内下载 ZIP 和同一 Release 的 SHA256SUMS，校验后由随包安装助手原子替换应用并重启。只替换 .app，不写账号配置或钥匙串。启动确认失败会回退旧应用；不可写目录和 DMG 内运行会拒绝安装。当前为 ad-hoc 签名，尚未使用 Developer ID 签名及 Apple 公证。
 
 本地开发可运行 `bash scripts/test.sh`、`python3 scripts/test-antigravity-bridge.py` 和 `bash scripts/build-app.sh`。清理 `.build/`、`dist/` 前，先把要保留的应用安装到 Applications 并退出构建目录中的实例；不要删除账号配置或 CodeGraph 索引。
 
 DMG 打包由 `bash scripts/package-release.sh` 完成，需先构建应用。脚本保留 ZIP，并验证 DMG 挂载内容后卸载。可单独运行 `bash scripts/verify-dmg.sh /绝对路径/QuotaDock-<版本>-macOS-arm64.dmg <版本>` 验收下载的 DMG。DMG 内包含 QuotaDock.app 与指向 /Applications 的链接；拖拽安装后弹出磁盘映像。更新清单继续指向 ZIP。
+
+更新验收：`bash scripts/test.sh` 覆盖校验、危险路径、取消、替换及回退；`QUOTADOCK_LIVE_UPDATE_TEST=1 bash scripts/test.sh --filter AppUpdateInstallerTests/testLiveReleaseDownloadAndVerification` 匿名验证当前公开 ZIP，不替换实际应用。完整进程退出、安装助手交接及重启确认使用 `python3 scripts/test-update-install.py` 在隔离演示副本中验收；它使用 Debug 专用无窗口模式，覆盖成功及回退，不改真实账号配置。
+
+当前安装包仍为 ad-hoc 签名。HTTPS 与发布校验值用于传输和包完整性验证，不代表 Developer ID 发布者认证。保留 ZIP 和 SHA256SUMS 作为应用内更新附件，DMG 用于首次拖拽安装。

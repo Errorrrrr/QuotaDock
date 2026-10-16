@@ -138,5 +138,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        UpdateController.shared.shouldAllowTermination ? .terminateNow : .terminateCancel
+    }
     func applicationWillTerminate(_ notification: Notification) { store.stopPolling() }
 }

@@ -1,8 +1,8 @@
 {
-  "version": "0.1.8",
-  "notes": "改善账号添加界面：DeepSeek 账号名称改为必填并直接展示，用于账号列表和菜单栏；余额接口不提供昵称时不再自动生成“账号 1”。",
-  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.8",
-  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.8/QuotaDock-0.1.8-macOS-arm64.zip",
+  "version": "0.1.9",
+  "notes": "修复后台刷新可能触发 macOS 钥匙串密码弹窗的问题：Antigravity、Claude 资料读取及 QuotaDock 保存的 Key 在后台使用禁止交互模式；需要授权时返回错误，不反复弹窗。Antigravity 无法读取资料时仍继续查询可用额度。",
+  "releaseURL": "https://github.com/Errorrrrr/QuotaDock/releases/tag/v0.1.9",
+  "downloadURL": "https://github.com/Errorrrrr/QuotaDock/releases/download/v0.1.9/QuotaDock-0.1.9-macOS-arm64.zip",
   "architecture": "arm64",
   "minimumSystemVersion": "14.0.0"
 }

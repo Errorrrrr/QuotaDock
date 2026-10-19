@@ -35,10 +35,10 @@ struct AntigravityAccountProfileProvider: Sendable {
         let context = LAContext()
         context.interactionNotAllowed = true
         var result: CFTypeRef?
-        let status = SecItemCopyMatching([
+        let status = try KeychainAccess.perform(allowInteraction: false) { SecItemCopyMatching([
             kSecClass: kSecClassGenericPassword, kSecAttrService: "gemini", kSecAttrAccount: "antigravity",
             kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne, kSecUseAuthenticationContext: context
-        ] as CFDictionary, &result)
+        ] as CFDictionary, &result) }
         guard status == errSecSuccess, let data = result as? Data, data.count <= CLIQuotaSupport.maximumBytes else { throw CLIQuotaError.missingFile }
         return data
     }

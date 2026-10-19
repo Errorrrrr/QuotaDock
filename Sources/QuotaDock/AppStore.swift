@@ -132,17 +132,17 @@ final class AppStore: ObservableObject {
                 case .manual:
                     return
                 case .httpJSON:
-                    credential = try self.keychain.token(for: accountID)
+                    credential = try self.keychain.token(for: accountID, allowInteraction: false)
                     result = try await HTTPQuotaProvider().fetch(tool: tool, account: account, token: credential)
                 case .codexCLI, .claudeOAuth, .antigravityCLI, .antigravityDesktop, .copilotCLI, .cursorCLI, .qwenCLI, .oriCLI, .deepseekCLI:
-                    if tool.provider == .deepseekCLI { credential = try self.keychain.token(for: accountID) }
+                    if tool.provider == .deepseekCLI { credential = try self.keychain.token(for: accountID, allowInteraction: false) }
                     result = try await LocalAccountConnection.fetch(provider: tool.provider, account: account, token: credential)
                 case .claudeSnapshot:
                     result = try await ClaudeSnapshotProvider().fetch(account: account)
                 case .antigravitySnapshot:
                     result = try await AntigravitySnapshotProvider().fetch(account: account)
                 case .kimiCLI:
-                    credential = try self.keychain.token(for: accountID)
+                    credential = try self.keychain.token(for: accountID, allowInteraction: false)
                     result = try await KimiCLIQuotaProvider().fetch(account: account, token: credential)
                 case .glmCLI:
                     result = try await GLMCLIQuotaProvider().fetch(account: account)

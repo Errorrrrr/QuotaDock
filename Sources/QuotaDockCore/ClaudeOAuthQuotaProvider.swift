@@ -82,14 +82,14 @@ public struct ClaudeOAuthQuotaProvider: Sendable {
         let context = LAContext()
         context.interactionNotAllowed = true
         var result: CFTypeRef?
-        let status = SecItemCopyMatching([
+        let status = try KeychainAccess.perform(allowInteraction: false) { SecItemCopyMatching([
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: ProcessInfo.processInfo.environment["USER"] ?? NSUserName(),
             kSecReturnData: true,
             kSecMatchLimit: kSecMatchLimitOne,
             kSecUseAuthenticationContext: context
-        ] as CFDictionary, &result)
+        ] as CFDictionary, &result) }
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess, let data = result as? Data, data.count <= CLIQuotaSupport.maximumBytes else { throw ClaudeOAuthError.keychainAccess }
         return data
